@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ report.title }} — LinkReport</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.2rem; font-weight: 600; }
+    header a  { color: #a0b4cc; font-size: 0.85rem; text-decoration: none; }
+    header a:hover { color: white; }
+
+    main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
+
+    /* Sumário */
+    .summary {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #e8e8e8;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .summary-left h2 { font-size: 1.1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
+    .summary-left p  { font-size: 0.8rem; color: #999; }
+
+    .stats { display: flex; gap: 1rem; }
+    .stat  { text-align: center; }
+    .stat-num   { font-size: 1.5rem; font-weight: 700; line-height: 1; }
+    .stat-label { font-size: 0.7rem; color: #999; margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+    .num-ok    { color: #2d7a3a; }
+    .num-error { color: #c0392b; }
+    .num-total { color: #1a1a2e; }
+
+    .actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: opacity .15s;
+    }
+    .btn-primary { background: #1a1a2e; color: white; }
+    .btn-outline { background: white; color: #1a1a2e; border: 1px solid #ddd; }
+    .btn:hover   { opacity: 0.8; }
+
+    /* Badge de status */
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .badge-done    { background: #e6f4ea; color: #2d7a3a; }
+    .badge-pending { background: #fff3e0; color: #b45309; }
+    .badge-running { background: #e8f0fe; color: #1a56db; }
+    .badge-error   { background: #fce8e8; color: #c0392b; }
+
+    /* Tabela */
+    .table-wrap {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #e8e8e8;
+      overflow: hidden;
+    }
+
+    table { width: 100%; border-collapse: collapse; }
+
+    thead th {
+      background: #f8f8f8;
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 1px solid #efefef;
+    }
+
+    tbody tr { border-bottom: 1px solid #f5f5f5; transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+
+    td { padding: 12px 14px; font-size: 0.85rem; vertical-align: middle; }
+
+    .td-url { max-width: 280px; }
+    .td-url a {
+      color: #1a56db;
+      text-decoration: none;
+      word-break: break-all;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .td-url a:hover { text-decoration: underline; }
+
+    .td-title { max-width: 220px; color: #444; font-size: 0.8rem; }
+    .td-title span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .td-status { text-align: center; }
+    .status-ok    { color: #2d7a3a; font-weight: 600; }
+    .status-redir { color: #b45309; font-weight: 600; }
+    .status-error { color: #c0392b; font-weight: 600; }
+
+    .td-time { color: #999; font-size: 0.8rem; text-align: right; white-space: nowrap; }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: #bbb;
+      font-size: 0.9rem;
+    }
+
+    /* Filtros */
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      background: white;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: #1a1a2e;
+      color: white;
+      border-color: #1a1a2e;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>LinkReport</h1>
+  <a href="/">← Voltar</a>
+</header>
+
+<main>
+  <div class="summary">
+    <div class="summary-left">
+      <h2>
+        {{ report.title }}
+        <span class="badge badge-{{ report.status }}" style="margin-left:8px;vertical-align:middle">
+          {{ report.get_status_display }}
+        </span>
+      </h2>
+      <p>Criado em {{ report.created_at|date:"d/m/Y \à\s H:i" }}</p>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num num-total">{{ report.total_links }}</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num num-ok">{{ report.ok_count }}</div>
+        <div class="stat-label">OK</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num num-error">{{ report.error_count }}</div>
+        <div class="stat-label">Erro</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn btn-primary" href="{% url 'download_pdf' report.id %}">
+        Baixar PDF
+      </a>
+      <a class="btn btn-outline" href="/">Novo relatório</a>
+    </div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterRows('all', this)">Todos</button>
+    <button class="filter-btn" onclick="filterRows('ok', this)">Apenas OK</button>
+    <button class="filter-btn" onclick="filterRows('error', this)">Apenas erros</button>
+  </div>
+
+  <div class="table-wrap">
+    {% if report.results.all %}
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>URL</th>
+          <th>Status</th>
+          <th>Título</th>
+          <th style="text-align:right">Tempo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in report.results.all %}
+        <tr data-ok="{{ r.is_ok|yesno:'true,false' }}">
+          <td class="td-url">
+            <a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.url }}</a>
+          </td>
+          <td class="td-status">
+            {% if r.error_msg %}
+              <span class="status-error">{{ r.error_msg }}</span>
+            {% elif r.status_code %}
+              <span class="{% if r.is_ok %}status-ok{% elif r.status_code >= 300 and r.status_code < 400 %}status-redir{% else %}status-error{% endif %}">
+                {{ r.status_code }}
+              </span>
+            {% else %}
+              <span style="color:#bbb">—</span>
+            {% endif %}
+          </td>
+          <td class="td-title">
+            <span title="{{ r.page_title }}">{{ r.page_title|default:"—" }}</span>
+          </td>
+          <td class="td-time">
+            {% if r.response_ms %}{{ r.response_ms }}ms{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty-state">Nenhum resultado ainda.</div>
+    {% endif %}
+  </div>
+</main>
+
+<script>
+  function filterRows(type, btn) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    document.querySelectorAll('#results-table tbody tr').forEach(row => {
+      const isOk = row.dataset.ok === 'true';
+      if (type === 'all')   row.style.display = '';
+      if (type === 'ok')    row.style.display = isOk ? '' : 'none';
+      if (type === 'error') row.style.display = !isOk ? '' : 'none';
+    });
+  }
+</script>
+
+</body>
+</html>
