@@ -20,7 +20,7 @@ urlpatterns = [
     path('reports/<uuid:pk>/', views.report_detail, name='report_detail'),
     path('reports/<uuid:pk>/status/', views.report_status, name='report_status'),
     path('reports/<uuid:pk>/pdf/', views.download_pdf, name='download_pdf'),
-
+    path('reports/<uuid:pk>/csv/', views.download_csv, name='download_csv'),
     # Auth pages
     path('register/', views.register, name='register'),
     path('login/', views.login_view, name='login'),

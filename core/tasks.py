@@ -13,6 +13,9 @@ def scrape_report(report_id):
 
     session = requests.Session()
     session.headers.update({'User-Agent': settings.SCRAPER_USER_AGENT})
+    from .email import send_report_ready_email
+    if report.owner and report.owner.email:
+        send_report_ready_email(report.owner, report)
 
     for lr in link_results:
         start = time.monotonic()

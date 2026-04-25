@@ -1,7 +1,9 @@
 import time
 import requests
-from bs4 import BeautifulSoup
+import csv
 
+from bs4 import BeautifulSoup
+from django.http import HttpResponse
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
@@ -234,3 +236,26 @@ def landing(request):
     if request.user.is_authenticated:
         return redirect('index')
     return render(request, 'landing.html')
+
+def download_csv(request, pk):
+    report  = get_object_or_404(Report, pk=pk)
+    results = report.results.all()
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="report-{str(report.id)[:8]}.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['URL', 'Status Code', 'Page Title', 'Description', 'Response (ms)', 'Error', 'Checked At'])
+
+    for r in results:
+        writer.writerow([
+            r.url,
+            r.status_code or '',
+            r.page_title or '',
+            r.description or '',
+            r.response_ms or '',
+            r.error_msg or '',
+            r.checked_at.strftime('%m/%d/%Y %H:%M') if r.checked_at else '',
+        ])
+
+    return response
