@@ -13,19 +13,19 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
+from core.tasks import scrape_report
+
 from .models import Report, LinkResult
 
 
 # ─── Páginas HTML ─────────────────────────────────────────────────────────────
 
 def index(request):
-    """Página inicial com formulário para colar URLs."""
     reports = Report.objects.all()[:10]
     return render(request, 'index.html', {'reports': reports})
 
 
 def report_detail(request, pk):
-    """Página de detalhe de um relatório."""
     report = get_object_or_404(Report, pk=pk)
     return render(request, 'report.html', {'report': report})
 
@@ -34,11 +34,7 @@ def report_detail(request, pk):
 
 @require_POST
 def create_report(request):
-    """
-    Recebe um POST com campo 'urls' (uma por linha) e 'title' opcional.
-    Cria o Report, processa as URLs de forma síncrona por enquanto
-    (depois vira task Celery) e retorna o ID do relatório.
-    """
+
     raw_urls = request.POST.get('urls', '')
     title    = request.POST.get('title', '').strip()
 
@@ -50,25 +46,22 @@ def create_report(request):
     if len(urls) > 50:
         return JsonResponse({'error': 'Máximo de 50 URLs por relatório.'}, status=400)
 
-    # Cria o relatório
     report = Report.objects.create(
         title=title or f'Relatório — {len(urls)} links',
         status=Report.Status.RUNNING,
     )
 
-    # Cria os LinkResult em branco para cada URL
     link_results = LinkResult.objects.bulk_create([
         LinkResult(report=report, url=url) for url in urls
     ])
-
-    # Processa cada URL (síncrono por ora — virar task Celery no próximo passo)
-    _scrape_report(report, link_results)
+    
+    from .tasks import scrape_report
+    scrape_report.delay(str(report.id))
 
     return JsonResponse({'report_id': str(report.id)}, status=201)
 
 
 def report_status(request, pk):
-    """Endpoint de polling: retorna status e progresso do relatório."""
     report = get_object_or_404(Report, pk=pk)
     done   = report.results.exclude(checked_at=None).count()
     total  = report.total_links
@@ -81,10 +74,8 @@ def report_status(request, pk):
     })
 
 
-# ─── Geração de PDF ───────────────────────────────────────────────────────────
 
 def download_pdf(request, pk):
-    """Gera e devolve o relatório em PDF usando ReportLab."""
     report  = get_object_or_404(Report, pk=pk)
     results = report.results.all()
 
@@ -151,7 +142,6 @@ def download_pdf(request, pk):
     return response
 
 
-# ─── Scraping (síncrono — será movido para tasks.py com Celery) ───────────────
 
 def _scrape_report(report: Report, link_results: list[LinkResult]) -> None:
     """
@@ -192,7 +182,6 @@ def _scrape_report(report: Report, link_results: list[LinkResult]) -> None:
         lr.checked_at = timezone.now()
         lr.save()
 
-    # Atualiza status do relatório
     has_error = link_results and all(lr.error_msg for lr in link_results)
     report.status = Report.Status.ERROR if has_error else Report.Status.DONE
     report.save()
