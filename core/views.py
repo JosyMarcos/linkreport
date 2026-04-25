@@ -21,7 +21,7 @@ from .models import Report, LinkResult
 # ─── Páginas HTML ─────────────────────────────────────────────────────────────
 
 def index(request):
-    reports = Report.objects.all()[:10]
+    reports = Report.objects.filter(owner=request.user).order_by('-created_at')[:10] if request.user.is_authenticated else []
     return render(request, 'index.html', {'reports': reports})
 
 
@@ -47,8 +47,9 @@ def create_report(request):
         return JsonResponse({'error': 'Máximo de 50 URLs por relatório.'}, status=400)
 
     report = Report.objects.create(
-        title=title or f'Relatório — {len(urls)} links',
+        title=title or f'Report — {len(urls)} links',
         status=Report.Status.RUNNING,
+        owner=request.user if request.user.is_authenticated else None,
     )
 
     link_results = LinkResult.objects.bulk_create([
@@ -59,6 +60,7 @@ def create_report(request):
     scrape_report.delay(str(report.id))
 
     return JsonResponse({'report_id': str(report.id)}, status=201)
+    
 
 
 def report_status(request, pk):
@@ -185,3 +187,47 @@ def _scrape_report(report: Report, link_results: list[LinkResult]) -> None:
     has_error = link_results and all(lr.error_msg for lr in link_results)
     report.status = Report.Status.ERROR if has_error else Report.Status.DONE
     report.save()
+
+import logging
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login, logout
+from django.shortcuts import redirect
+
+logger = logging.getLogger('core')
+
+
+def register(request):
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '').strip()
+        email    = request.POST.get('email', '').strip()
+
+        if not username or not password:
+            return JsonResponse({'error': 'Username and password are required.'}, status=400)
+
+        if User.objects.filter(username=username).exists():
+            return JsonResponse({'error': 'Username already taken.'}, status=400)
+
+        user = User.objects.create_user(username=username, password=password, email=email)
+        logger.info(f'New user registered: {username}')
+        return JsonResponse({'message': 'User created successfully.'}, status=201)
+
+    return render(request, 'register.html')
+
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            logger.info(f'User logged in: {username}')
+            return redirect('index')
+        return render(request, 'login.html', {'error': 'Invalid credentials.'})
+    return render(request, 'login.html')
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,13 +23,15 @@
       gap: 12px;
     }
     header h1 { font-size: 1.2rem; font-weight: 600; letter-spacing: -0.02em; }
-    header span { font-size: 0.75rem; background: #16213e; padding: 3px 10px; border-radius: 20px; color: #a0b4cc; }
+    header .badge { font-size: 0.75rem; background: #16213e; padding: 3px 10px; border-radius: 20px; color: #a0b4cc; }
+    header .user-area { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    header .username { font-size: 0.8rem; color: #a0b4cc; }
+    header a.signout { font-size: 0.8rem; color: #a0b4cc; text-decoration: none; border: 1px solid #2d3f6e; padding: 4px 12px; border-radius: 6px; }
+    header a.signout:hover { background: #2d3f6e; }
+    header a.signin { font-size: 0.8rem; color: white; background: #3b5bdb; padding: 5px 14px; border-radius: 6px; text-decoration: none; margin-left: auto; }
+    header a.signin:hover { opacity: 0.85; }
 
-    main {
-      max-width: 760px;
-      margin: 2.5rem auto;
-      padding: 0 1rem;
-    }
+    main { max-width: 760px; margin: 2.5rem auto; padding: 0 1rem; }
 
     .card {
       background: white;
@@ -38,7 +40,6 @@
       padding: 1.75rem;
       margin-bottom: 1.5rem;
     }
-
     .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #1a1a2e; }
 
     label { display: block; font-size: 0.8rem; font-weight: 500; color: #666; margin-bottom: 6px; }
@@ -74,7 +75,6 @@
     button[type="submit"]:hover { opacity: 0.85; }
     button[type="submit"]:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    /* Histórico */
     .history-title {
       font-size: 0.75rem;
       font-weight: 600;
@@ -95,11 +95,10 @@
     }
     .report-row:last-child { border-bottom: none; }
     .report-row:hover .report-title { color: #1a1a2e; text-decoration: underline; }
-
     .report-title { font-size: 0.9rem; font-weight: 500; }
     .report-meta { font-size: 0.75rem; color: #999; margin-top: 2px; }
 
-    .badge {
+    .badge-status {
       font-size: 0.7rem;
       font-weight: 500;
       padding: 3px 10px;
@@ -112,7 +111,11 @@
 
     .empty { font-size: 0.85rem; color: #bbb; text-align: center; padding: 1.5rem 0; }
 
-    /* Loading overlay */
+    .login-prompt { text-align: center; padding: 1.5rem 0; }
+    .login-prompt p { font-size: 0.9rem; color: #999; margin-bottom: 1rem; }
+    .login-prompt a { color: #1a1a2e; font-weight: 500; text-decoration: none; border: 1px solid #ddd; padding: 8px 20px; border-radius: 8px; }
+    .login-prompt a:hover { background: #f5f5f5; }
+
     #loading {
       display: none;
       position: fixed;
@@ -123,12 +126,7 @@
       justify-content: center;
     }
     #loading.show { display: flex; }
-    .loading-box {
-      background: white;
-      border-radius: 12px;
-      padding: 2rem 2.5rem;
-      text-align: center;
-    }
+    .loading-box { background: white; border-radius: 12px; padding: 2rem 2.5rem; text-align: center; }
     .spinner {
       width: 32px; height: 32px;
       border: 3px solid #e0e0e0;
@@ -143,40 +141,57 @@
   </style>
 </head>
 <body>
-  <form id="csrf-form">{% csrf_token %}</form>
+
+<form id="csrf-form">{% csrf_token %}</form>
+
 <header>
   <h1>LinkReport</h1>
-  <span>Verificador de URLs</span>
+  <span class="badge">URL Checker</span>
+  {% if request.user.is_authenticated %}
+    <div class="user-area">
+      <span class="username">{{ request.user.username }}</span>
+      <a class="signout" href="{% url 'logout' %}">Sign out</a>
+    </div>
+  {% else %}
+    <a class="signin" href="{% url 'login' %}">Sign in</a>
+  {% endif %}
 </header>
 
 <main>
   <div class="card">
-    <h2>Novo relatório</h2>
+    <h2>New report</h2>
 
-    <label for="title">Nome do relatório (opcional)</label>
-    <input type="text" id="title" placeholder="Ex: Landing pages cliente X">
+    <label for="title">Report name (optional)</label>
+    <input type="text" id="title" placeholder="Ex: Client X landing pages">
 
-    <label for="urls">URLs — uma por linha</label>
-    <textarea id="urls" placeholder="https://exemplo.com&#10;https://google.com&#10;https://github.com"></textarea>
-    <p class="hint">Máximo 50 URLs por relatório.</p>
+    <label for="urls">URLs — one per line</label>
+    <textarea id="urls" placeholder="https://example.com&#10;https://google.com&#10;https://github.com"></textarea>
+    <p class="hint">Maximum 50 URLs per report.</p>
 
-    <button type="submit" id="btn-submit" onclick="submitReport()">Gerar relatório</button>
+    <button type="submit" id="btn-submit" onclick="submitReport()">Generate report</button>
   </div>
 
   <div class="card">
-    <p class="history-title">Relatórios recentes</p>
-    {% if reports %}
-      {% for r in reports %}
-        <a class="report-row" href="{% url 'report_detail' r.id %}">
-          <div>
-            <div class="report-title">{{ r.title }}</div>
-            <div class="report-meta">{{ r.total_links }} links · {{ r.created_at|date:"d/m/Y H:i" }}</div>
-          </div>
-          <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
-        </a>
-      {% endfor %}
+    <p class="history-title">Recent reports</p>
+    {% if request.user.is_authenticated %}
+      {% if reports %}
+        {% for r in reports %}
+          <a class="report-row" href="{% url 'report_detail' r.id %}">
+            <div>
+              <div class="report-title">{{ r.title }}</div>
+              <div class="report-meta">{{ r.total_links }} links · {{ r.created_at|date:"m/d/Y H:i" }}</div>
+            </div>
+            <span class="badge-status badge-{{ r.status }}">{{ r.get_status_display }}</span>
+          </a>
+        {% endfor %}
+      {% else %}
+        <p class="empty">No reports yet. Create your first one above!</p>
+      {% endif %}
     {% else %}
-      <p class="empty">Nenhum relatório ainda. Crie o primeiro acima!</p>
+      <div class="login-prompt">
+        <p>Sign in to save and view your reports.</p>
+        <a href="{% url 'login' %}">Sign in</a>
+      </div>
     {% endif %}
   </div>
 </main>
@@ -184,21 +199,21 @@
 <div id="loading">
   <div class="loading-box">
     <div class="spinner"></div>
-    <p>Verificando links...</p>
-    <small id="loading-progress">Aguarde</small>
+    <p>Checking links...</p>
+    <small id="loading-progress">Please wait</small>
   </div>
 </div>
 
 <script>
   function getCsrfToken() {
-  return document.querySelector('[name=csrfmiddlewaretoken]').value;
-}
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+  }
 
   async function submitReport() {
     const urls  = document.getElementById('urls').value.trim();
     const title = document.getElementById('title').value.trim();
 
-    if (!urls) { alert('Cole pelo menos uma URL.'); return; }
+    if (!urls) { alert('Please enter at least one URL.'); return; }
 
     const btn = document.getElementById('btn-submit');
     btn.disabled = true;
@@ -218,16 +233,15 @@
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || 'Erro ao criar relatório.');
+        alert(data.error || 'Error creating report.');
         return;
       }
 
-      // Polling de status
       await pollStatus(data.report_id);
       window.location.href = `/reports/${data.report_id}/`;
 
     } catch (e) {
-      alert('Erro de conexão.');
+      alert('Connection error.');
     } finally {
       btn.disabled = false;
       document.getElementById('loading').classList.remove('show');
@@ -239,7 +253,7 @@
     while (true) {
       const r    = await fetch(`/reports/${id}/status/`);
       const data = await r.json();
-      prog.textContent = `${data.done} de ${data.total} links verificados (${data.percent}%)`;
+      prog.textContent = `${data.done} of ${data.total} links checked (${data.percent}%)`;
       if (data.status === 'done' || data.status === 'error') break;
       await new Promise(res => setTimeout(res, 1500));
     }
