@@ -14,7 +14,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     # HTML pages
-    path('', views.index, name='index'),
+    path('', views.landing, name='landing'),
+    path('app/', views.index, name='index'),
     path('reports/', views.create_report, name='create_report'),
     path('reports/<uuid:pk>/', views.report_detail, name='report_detail'),
     path('reports/<uuid:pk>/status/', views.report_status, name='report_status'),

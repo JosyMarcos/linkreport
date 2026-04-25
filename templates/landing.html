@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkReport — Bulk URL Health Checker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #08080e;
+      --surface: #0f0f18;
+      --surface2: #16161f;
+      --border: rgba(255,255,255,0.06);
+      --border2: rgba(255,255,255,0.12);
+      --text: #eeeef5;
+      --text-muted: #7070a0;
+      --text-dim: #35354a;
+      --accent: #6c63ff;
+      --accent2: #a78bfa;
+      --accent-glow: rgba(108,99,255,0.2);
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grid bg ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(108,99,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(108,99,255,0.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Glow blobs ── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 { width: 500px; height: 500px; background: rgba(108,99,255,0.15); top: -100px; left: -100px; }
+    .blob-2 { width: 400px; height: 400px; background: rgba(167,139,250,0.1); bottom: -80px; right: -80px; }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(8,8,14,0.8);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 2rem;
+      gap: 16px;
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      letter-spacing: -0.03em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: var(--text);
+    }
+
+    .nav-dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 8px var(--accent); } 50% { box-shadow: 0 0 20px var(--accent); } }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      margin-left: 2rem;
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+    .btn-nav-ghost {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border2);
+      padding: 7px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .btn-nav-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+
+    .btn-nav-accent {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: white;
+      background: var(--accent);
+      border: none;
+      padding: 7px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .btn-nav-accent:hover { opacity: 0.85; box-shadow: 0 0 20px var(--accent-glow); }
+
+    /* ── Sections ── */
+    section { position: relative; z-index: 1; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 4rem;
+    }
+
+    .hero-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      background: rgba(108,99,255,0.1);
+      border: 1px solid rgba(108,99,255,0.25);
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 1.5rem;
+      display: inline-block;
+      animation: fadeUp .6s ease both;
+    }
+
+    .hero h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 1.5rem;
+      animation: fadeUp .6s .1s ease both;
+    }
+
+    .hero h1 .line-accent {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 2.5rem;
+      animation: fadeUp .6s .2s ease both;
+    }
+
+    .hero-ctas {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeUp .6s .3s ease both;
+      margin-bottom: 4rem;
+    }
+
+    .btn-hero-primary {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: white;
+      background: var(--accent);
+      border: none;
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all .2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-hero-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent); }
+    .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(108,99,255,0.45); }
+
+    .btn-hero-ghost {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      background: transparent;
+      border: 1px solid var(--border2);
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: all .2s;
+    }
+    .btn-hero-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.25); }
+
+    /* ── App preview ── */
+    .app-preview {
+      width: 100%;
+      max-width: 860px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      overflow: hidden;
+      animation: fadeUp .6s .4s ease both;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px var(--border);
+    }
+
+    .preview-bar {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .preview-dots { display: flex; gap: 6px; }
+    .preview-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red { background: #ff5f57; }
+    .dot-amber { background: #febc2e; }
+    .dot-green { background: #28c840; }
+
+    .preview-url {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .preview-body { padding: 1.5rem; }
+
+    .preview-table { width: 100%; border-collapse: collapse; }
+    .preview-table th {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .preview-table td { padding: 10px 12px; font-size: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    .preview-table tr:last-child td { border-bottom: none; }
+    .td-url { font-family: 'DM Mono', monospace; font-size: 0.72rem; color: #6c9eff; }
+    .status-ok { color: var(--green); font-family: 'DM Mono', monospace; font-weight: 500; }
+    .status-err { color: var(--red); font-family: 'DM Mono', monospace; font-weight: 500; }
+    .status-redir { color: var(--amber); font-family: 'DM Mono', monospace; font-weight: 500; }
+    .td-time { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-muted); text-align: right; }
+    .td-title { color: var(--text-muted); font-size: 0.78rem; }
+
+    /* Stats row */
+    .preview-stats {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .preview-stat {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stat-n { font-family: 'Syne', sans-serif; font-size: 1.25rem; font-weight: 700; }
+    .stat-l { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+
+    /* ── Features ── */
+    .features { padding: 6rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+    .section-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-sub {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 480px;
+      line-height: 1.7;
+      margin-bottom: 3.5rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      padding: 2rem;
+      transition: background .2s;
+    }
+    .feature-card:hover { background: var(--surface2); }
+
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: rgba(108,99,255,0.12);
+      border: 1px solid rgba(108,99,255,0.2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 18px;
+    }
+
+    .feature-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+    }
+
+    /* ── How it works ── */
+    .how { padding: 6rem 2rem; max-width: 800px; margin: 0 auto; }
+
+    .steps { display: flex; flex-direction: column; gap: 0; }
+
+    .step {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+      padding: 2rem 0;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .step:last-child { border-bottom: none; }
+
+    .step-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      background: rgba(108,99,255,0.1);
+      border: 1px solid rgba(108,99,255,0.2);
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-weight: 500;
+    }
+
+    .step-content h3 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .step-content p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.7; }
+
+    /* ── Use cases ── */
+    .use-cases { padding: 6rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+    .use-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 3rem;
+    }
+
+    .use-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all .2s;
+    }
+    .use-card:hover { border-color: rgba(108,99,255,0.3); transform: translateY(-2px); }
+
+    .use-emoji { font-size: 1.5rem; margin-bottom: 0.75rem; }
+    .use-title { font-family: 'Syne', sans-serif; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .use-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* ── API section ── */
+    .api-section { padding: 6rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+    .api-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: center; }
+    @media (max-width: 768px) { .api-grid { grid-template-columns: 1fr; } }
+
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .code-header {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .code-lang {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    pre {
+      padding: 1.5rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      line-height: 1.8;
+      color: var(--text);
+      overflow-x: auto;
+    }
+
+    .kw { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .fn { color: #82aaff; }
+    .num { color: #f78c6c; }
+    .cm { color: var(--text-dim); }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 6rem 2rem;
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .cta-card {
+      background: var(--surface);
+      border: 1px solid rgba(108,99,255,0.3);
+      border-radius: 24px;
+      padding: 4rem 3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-card::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: 50%;
+      transform: translateX(-50%);
+      width: 300px; height: 200px;
+      background: radial-gradient(ellipse, rgba(108,99,255,0.2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.75rem;
+    }
+
+    .cta-card p {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 2rem;
+      line-height: 1.7;
+    }
+
+    .cta-perks {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .cta-perk {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .perk-check { color: var(--green); }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    .footer-links a { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; transition: color .2s; }
+    .footer-links a:hover { color: var(--text); }
+
+    .footer-copy {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<!-- Nav -->
+<nav>
+  <a class="nav-logo" href="#"><span class="nav-dot"></span>LinkReport</a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#api">API</a></li>
+  </ul>
+  <div class="nav-right">
+    <a class="btn-nav-ghost" href="/login/">Sign in</a>
+    <a class="btn-nav-accent" href="/register/">Get started free</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <span class="hero-tag">✦ URL health monitoring for professionals</span>
+  <h1>
+    Stop checking links<br>
+    <span class="line-accent">one by one.</span>
+  </h1>
+  <p class="hero-sub">
+    Paste up to 50 URLs, get status codes, page titles, response times and a formatted PDF report — in seconds.
+  </p>
+  <div class="hero-ctas">
+    <a class="btn-hero-primary" href="/register/">Start for free →</a>
+    <a class="btn-hero-ghost" href="/api/docs/">View API docs</a>
+  </div>
+
+  <!-- App preview -->
+  <div class="app-preview">
+    <div class="preview-bar">
+      <div class="preview-dots">
+        <div class="preview-dot dot-red"></div>
+        <div class="preview-dot dot-amber"></div>
+        <div class="preview-dot dot-green"></div>
+      </div>
+      <div class="preview-url">linkreport.app/reports/a3f9...</div>
+    </div>
+    <div class="preview-body">
+      <div class="preview-stats">
+        <div class="preview-stat"><span class="stat-n" style="color:var(--text)">12</span><span class="stat-l">Total</span></div>
+        <div class="preview-stat"><span class="stat-n" style="color:var(--green)">10</span><span class="stat-l">OK</span></div>
+        <div class="preview-stat"><span class="stat-n" style="color:var(--red)">2</span><span class="stat-l">Errors</span></div>
+        <div class="preview-stat" style="margin-left:auto"><span style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--accent)">↓ Download PDF</span></div>
+      </div>
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th>URL</th><th>Status</th><th>Title</th><th style="text-align:right">Response</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-url">https://company.com/</td>
+            <td><span class="status-ok">200</span></td>
+            <td class="td-title">Home — Company Inc.</td>
+            <td class="td-time">312ms</td>
+          </tr>
+          <tr>
+            <td class="td-url">https://company.com/about</td>
+            <td><span class="status-ok">200</span></td>
+            <td class="td-title">About Us</td>
+            <td class="td-time">289ms</td>
+          </tr>
+          <tr>
+            <td class="td-url">https://company.com/old-page</td>
+            <td><span class="status-err">404</span></td>
+            <td class="td-title">—</td>
+            <td class="td-time">120ms</td>
+          </tr>
+          <tr>
+            <td class="td-url">https://company.com/blog</td>
+            <td><span class="status-redir">301</span></td>
+            <td class="td-title">The Blog</td>
+            <td class="td-time">445ms</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="reveal">
+    <span class="section-tag">// features</span>
+    <h2 class="section-title">Everything you need<br>for link auditing</h2>
+    <p class="section-sub">Built for agencies, SEO teams, and developers who audit URLs daily.</p>
+  </div>
+  <div class="features-grid reveal">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3 class="feature-title">Bulk verification</h3>
+      <p class="feature-desc">Submit up to 50 URLs at once. Processed asynchronously so your browser never freezes.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3 class="feature-title">Rich metadata</h3>
+      <p class="feature-desc">Captures HTTP status, page title, meta description and response time for every URL.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📄</div>
+      <h3 class="feature-title">PDF export</h3>
+      <p class="feature-desc">Download a formatted PDF report ready to send to clients in one click.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3 class="feature-title">Secure accounts</h3>
+      <p class="feature-desc">Each user sees only their own reports. JWT authentication for API access.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔗</div>
+      <h3 class="feature-title">REST API</h3>
+      <p class="feature-desc">Full REST API with OpenAPI docs. Integrate LinkReport into your own workflow.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <h3 class="feature-title">Report history</h3>
+      <p class="feature-desc">All your reports saved and accessible. Filter by status, search, compare over time.</p>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="how" id="how">
+  <div class="reveal">
+    <span class="section-tag">// how it works</span>
+    <h2 class="section-title">Simple. Fast. Reliable.</h2>
+    <p class="section-sub">From URL list to PDF report in under 30 seconds.</p>
+  </div>
+  <div class="steps reveal">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Paste your URLs</h3>
+        <p>Copy and paste up to 50 URLs into the form — one per line. Give your report a name or leave it blank.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>We check everything</h3>
+        <p>Our crawler visits each URL, captures the HTTP status, page title, meta description and response time.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>Review and filter</h3>
+        <p>See all results in a clean table. Filter by status — show only errors to find broken links instantly.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>Download your PDF</h3>
+        <p>Export a formatted PDF report ready to share with your client or team. One click, done.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Use cases -->
+<section class="use-cases">
+  <div class="reveal">
+    <span class="section-tag">// use cases</span>
+    <h2 class="section-title">Who uses LinkReport</h2>
+  </div>
+  <div class="use-grid reveal">
+    <div class="use-card">
+      <div class="use-emoji">🏢</div>
+      <h3 class="use-title">Digital agencies</h3>
+      <p class="use-desc">Audit client websites before and after a redesign. Deliver a professional PDF report.</p>
+    </div>
+    <div class="use-card">
+      <div class="use-emoji">🔍</div>
+      <h3 class="use-title">SEO professionals</h3>
+      <p class="use-desc">Find 404s, redirects and missing meta descriptions across large sitemaps.</p>
+    </div>
+    <div class="use-card">
+      <div class="use-emoji">👩‍💻</div>
+      <h3 class="use-title">Developers</h3>
+      <p class="use-desc">Verify links after a deployment. Catch broken pages before clients do.</p>
+    </div>
+    <div class="use-card">
+      <div class="use-emoji">📣</div>
+      <h3 class="use-title">Marketing teams</h3>
+      <p class="use-desc">Monitor campaign landing pages and ensure every link in your email works.</p>
+    </div>
+  </div>
+</section>
+
+<!-- API -->
+<section class="api-section" id="api">
+  <div class="api-grid">
+    <div class="reveal">
+      <span class="section-tag">// rest api</span>
+      <h2 class="section-title">Built for developers</h2>
+      <p style="font-size:0.95rem;color:var(--text-muted);line-height:1.7;margin-bottom:1.5rem">
+        Full REST API with JWT authentication and interactive Swagger docs. Integrate link checking into your CI/CD pipeline, dashboards or internal tools.
+      </p>
+      <a class="btn-hero-ghost" href="/api/docs/" style="display:inline-block">View API docs →</a>
+    </div>
+    <div class="code-block reveal">
+      <div class="code-header">
+        <span class="code-lang">python</span>
+        <span style="font-family:'DM Mono',monospace;font-size:0.65rem;color:var(--green)">● live</span>
+      </div>
+      <pre><span class="kw">import</span> requests
+
+<span class="cm"># Authenticate</span>
+token = requests.<span class="fn">post</span>(<span class="str">"/api/v1/auth/login/"</span>, json={
+    <span class="str">"username"</span>: <span class="str">"you"</span>,
+    <span class="str">"password"</span>: <span class="str">"••••••••"</span>
+}).json()[<span class="str">"access"</span>]
+
+<span class="cm"># Create a report</span>
+report = requests.<span class="fn">post</span>(<span class="str">"/api/v1/reports/create/"</span>,
+    headers={<span class="str">"Authorization"</span>: <span class="fn">f</span><span class="str">"Bearer {token}"</span>},
+    json={<span class="str">"urls"</span>: <span class="str">"https://site.com\nhttps://site.com/about"</span>}
+).json()
+
+<span class="fn">print</span>(report[<span class="str">"id"</span>])  <span class="cm"># ready to poll</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-card reveal">
+    <h2>Start checking your links today</h2>
+    <p>Free to use. No credit card required. Set up in 30 seconds.</p>
+    <div class="cta-perks">
+      <span class="cta-perk"><span class="perk-check">✓</span> 50 URLs per report</span>
+      <span class="cta-perk"><span class="perk-check">✓</span> PDF export</span>
+      <span class="cta-perk"><span class="perk-check">✓</span> Full API access</span>
+      <span class="cta-perk"><span class="perk-check">✓</span> Report history</span>
+    </div>
+    <a class="btn-hero-primary" href="/register/" style="display:inline-block">Create free account →</a>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-logo"><span style="width:6px;height:6px;background:var(--accent);border-radius:50%;display:inline-block"></span>LinkReport</div>
+  <ul class="footer-links">
+    <li><a href="/api/docs/">API Docs</a></li>
+    <li><a href="/login/">Sign in</a></li>
+    <li><a href="/register/">Sign up</a></li>
+  </ul>
+  <span class="footer-copy">Built with Django + Python</span>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

@@ -229,3 +229,8 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+def landing(request):
+    if request.user.is_authenticated:
+        return redirect('index')
+    return render(request, 'landing.html')
