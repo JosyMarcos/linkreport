@@ -1,213 +1,132 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ report.title }} — LinkReport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f5f5f5;
-      color: #1a1a1a;
-      min-height: 100vh;
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #18181f;
+      --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.14);
+      --text: #f0f0f5; --text-muted: #6b6b80; --text-dim: #3a3a4a;
+      --accent: #6c63ff; --accent-glow: rgba(108,99,255,0.15);
+      --green: #22c55e; --green-bg: rgba(34,197,94,0.1);
+      --amber: #f59e0b; --amber-bg: rgba(245,158,11,0.1);
+      --red: #ef4444; --red-bg: rgba(239,68,68,0.1);
+      --blue: #3b82f6; --blue-bg: rgba(59,130,246,0.1);
     }
-
-    header {
-      background: #1a1a2e;
-      color: white;
-      padding: 1.25rem 2rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+    body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
     }
-    header h1 { font-size: 1.2rem; font-weight: 600; }
-    header a  { color: #a0b4cc; font-size: 0.85rem; text-decoration: none; }
-    header a:hover { color: white; }
+    header { position: sticky; top: 0; z-index: 50; background: rgba(10,10,15,0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 60px; display: flex; align-items: center; gap: 16px; }
+    .logo { font-size: 1rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); display: flex; align-items: center; gap: 8px; text-decoration: none; }
+    .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); }
+    .back-link { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--text-muted); text-decoration: none; display: flex; align-items: center; gap: 6px; transition: color .2s; margin-left: auto; }
+    .back-link:hover { color: var(--text); }
+    main { position: relative; z-index: 1; max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
 
-    main { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
-
-    /* Sumário */
+    /* Summary bar */
     .summary {
-      background: white;
-      border-radius: 12px;
-      border: 1px solid #e8e8e8;
-      padding: 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
       margin-bottom: 1.25rem;
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-    .summary-left h2 { font-size: 1.1rem; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; }
-    .summary-left p  { font-size: 0.8rem; color: #999; }
-
-    .stats { display: flex; gap: 1rem; }
-    .stat  { text-align: center; }
-    .stat-num   { font-size: 1.5rem; font-weight: 700; line-height: 1; }
-    .stat-label { font-size: 0.7rem; color: #999; margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
-    .num-ok    { color: #2d7a3a; }
-    .num-error { color: #c0392b; }
-    .num-total { color: #1a1a2e; }
-
-    .actions { display: flex; gap: 8px; align-items: center; }
-    .btn {
-      display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 500;
-      text-decoration: none;
-      cursor: pointer;
-      border: none;
-      transition: opacity .15s;
-    }
-    .btn-primary { background: #1a1a2e; color: white; }
-    .btn-outline { background: white; color: #1a1a2e; border: 1px solid #ddd; }
-    .btn:hover   { opacity: 0.8; }
-
-    /* Badge de status */
-    .badge {
-      font-size: 0.7rem;
-      font-weight: 500;
-      padding: 3px 10px;
-      border-radius: 20px;
-    }
-    .badge-done    { background: #e6f4ea; color: #2d7a3a; }
-    .badge-pending { background: #fff3e0; color: #b45309; }
-    .badge-running { background: #e8f0fe; color: #1a56db; }
-    .badge-error   { background: #fce8e8; color: #c0392b; }
-
-    /* Tabela */
-    .table-wrap {
-      background: white;
-      border-radius: 12px;
-      border: 1px solid #e8e8e8;
-      overflow: hidden;
-    }
-
-    table { width: 100%; border-collapse: collapse; }
-
-    thead th {
-      background: #f8f8f8;
-      padding: 10px 14px;
-      text-align: left;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      border-bottom: 1px solid #efefef;
-    }
-
-    tbody tr { border-bottom: 1px solid #f5f5f5; transition: background .1s; }
-    tbody tr:last-child { border-bottom: none; }
-    tbody tr:hover { background: #fafafa; }
-
-    td { padding: 12px 14px; font-size: 0.85rem; vertical-align: middle; }
-
-    .td-url { max-width: 280px; }
-    .td-url a {
-      color: #1a56db;
-      text-decoration: none;
-      word-break: break-all;
-      display: block;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .td-url a:hover { text-decoration: underline; }
-
-    .td-title { max-width: 220px; color: #444; font-size: 0.8rem; }
-    .td-title span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .td-status { text-align: center; }
-    .status-ok    { color: #2d7a3a; font-weight: 600; }
-    .status-redir { color: #b45309; font-weight: 600; }
-    .status-error { color: #c0392b; font-weight: 600; }
-
-    .td-time { color: #999; font-size: 0.8rem; text-align: right; white-space: nowrap; }
-
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: #bbb;
-      font-size: 0.9rem;
-    }
-
-    /* Filtros */
-    .filters {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 1rem;
+      gap: 1.5rem;
       flex-wrap: wrap;
+      animation: fadeUp .4s ease both;
     }
-    .filter-btn {
-      padding: 5px 14px;
-      border-radius: 20px;
-      border: 1px solid #ddd;
-      background: white;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all .15s;
-    }
-    .filter-btn.active, .filter-btn:hover {
-      background: #1a1a2e;
-      color: white;
-      border-color: #1a1a2e;
-    }
+    .summary-left { flex: 1; min-width: 200px; }
+    .summary-title { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+    .summary-meta { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+
+    .stats { display: flex; gap: 1.5rem; }
+    .stat { text-align: center; }
+    .stat-num { font-size: 1.75rem; font-weight: 700; line-height: 1; letter-spacing: -0.03em; }
+    .stat-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; margin-top: 2px; }
+    .num-total { color: var(--text); }
+    .num-ok    { color: var(--green); }
+    .num-error { color: var(--red); }
+
+    .actions { display: flex; gap: 8px; }
+    .btn-primary { font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 600; color: white; background: var(--accent); border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all .2s; }
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(108,99,255,0.35); }
+    .btn-ghost { font-family: 'Syne', sans-serif; font-size: 0.8rem; color: var(--text-muted); background: transparent; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all .2s; }
+    .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* Badge */
+    .badge { font-family: 'DM Mono', monospace; font-size: 0.65rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; letter-spacing: 0.05em; }
+    .badge-done    { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .badge-pending { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+    .badge-running { background: var(--blue-bg);  color: var(--blue);  border: 1px solid rgba(59,130,246,0.2); }
+    .badge-error   { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(239,68,68,0.2); }
+
+    /* Filters */
+    .filters { display: flex; gap: 6px; margin-bottom: 1rem; animation: fadeUp .4s .1s ease both; }
+    .filter-btn { font-family: 'DM Mono', monospace; font-size: 0.7rem; padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer; transition: all .15s; letter-spacing: 0.03em; }
+    .filter-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+    /* Table */
+    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; animation: fadeUp .4s .15s ease both; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: var(--surface2); padding: 10px 16px; text-align: left; font-family: 'DM Mono', monospace; font-size: 0.65rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--border); }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+    td { padding: 13px 16px; font-size: 0.82rem; vertical-align: middle; }
+    .td-url { max-width: 300px; }
+    .td-url a { color: var(--accent); text-decoration: none; word-break: break-all; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'DM Mono', monospace; font-size: 0.75rem; }
+    .td-url a:hover { text-decoration: underline; }
+    .td-title { max-width: 240px; }
+    .td-title span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); font-size: 0.8rem; }
+    .td-status { text-align: center; font-family: 'DM Mono', monospace; font-size: 0.8rem; font-weight: 500; }
+    .status-ok    { color: var(--green); }
+    .status-redir { color: var(--amber); }
+    .status-error { color: var(--red); }
+    .td-time { text-align: right; font-family: 'DM Mono', monospace; font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+    .empty-state { text-align: center; padding: 3rem 1rem; font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--text-dim); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
-
 <header>
-  <h1>LinkReport</h1>
-  <a href="/">← Voltar</a>
+  <a class="logo" href="/"><span class="logo-dot"></span>LinkReport</a>
+  <a class="back-link" href="/">← back to dashboard</a>
 </header>
-
 <main>
   <div class="summary">
     <div class="summary-left">
-      <h2>
+      <div class="summary-title">
         {{ report.title }}
-        <span class="badge badge-{{ report.status }}" style="margin-left:8px;vertical-align:middle">
-          {{ report.get_status_display }}
-        </span>
-      </h2>
-      <p>Criado em {{ report.created_at|date:"d/m/Y \à\s H:i" }}</p>
+        <span class="badge badge-{{ report.status }}">{{ report.get_status_display }}</span>
+      </div>
+      <div class="summary-meta">created {{ report.created_at|date:"m/d/Y \a\t H:i" }}</div>
     </div>
-
     <div class="stats">
-      <div class="stat">
-        <div class="stat-num num-total">{{ report.total_links }}</div>
-        <div class="stat-label">Total</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num num-ok">{{ report.ok_count }}</div>
-        <div class="stat-label">OK</div>
-      </div>
-      <div class="stat">
-        <div class="stat-num num-error">{{ report.error_count }}</div>
-        <div class="stat-label">Erro</div>
-      </div>
+      <div class="stat"><div class="stat-num num-total">{{ report.total_links }}</div><div class="stat-label">total</div></div>
+      <div class="stat"><div class="stat-num num-ok">{{ report.ok_count }}</div><div class="stat-label">ok</div></div>
+      <div class="stat"><div class="stat-num num-error">{{ report.error_count }}</div><div class="stat-label">error</div></div>
     </div>
-
     <div class="actions">
-      <a class="btn btn-primary" href="{% url 'download_pdf' report.id %}">
-        Baixar PDF
-      </a>
-      <a class="btn btn-outline" href="/">Novo relatório</a>
+      <a class="btn-primary" href="{% url 'download_pdf' report.id %}">Download PDF</a>
+      <a class="btn-ghost" href="/">New report</a>
     </div>
   </div>
 
   <div class="filters">
-    <button class="filter-btn active" onclick="filterRows('all', this)">Todos</button>
-    <button class="filter-btn" onclick="filterRows('ok', this)">Apenas OK</button>
-    <button class="filter-btn" onclick="filterRows('error', this)">Apenas erros</button>
+    <button class="filter-btn active" onclick="filterRows('all', this)">all</button>
+    <button class="filter-btn" onclick="filterRows('ok', this)">ok only</button>
+    <button class="filter-btn" onclick="filterRows('error', this)">errors only</button>
   </div>
 
   <div class="table-wrap">
@@ -217,48 +136,38 @@
         <tr>
           <th>URL</th>
           <th>Status</th>
-          <th>Título</th>
-          <th style="text-align:right">Tempo</th>
+          <th>Page title</th>
+          <th style="text-align:right">Response</th>
         </tr>
       </thead>
       <tbody>
         {% for r in report.results.all %}
         <tr data-ok="{{ r.is_ok|yesno:'true,false' }}">
-          <td class="td-url">
-            <a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.url }}</a>
-          </td>
+          <td class="td-url"><a href="{{ r.url }}" target="_blank" rel="noopener">{{ r.url }}</a></td>
           <td class="td-status">
             {% if r.error_msg %}
               <span class="status-error">{{ r.error_msg }}</span>
             {% elif r.status_code %}
-              <span class="{% if r.is_ok %}status-ok{% elif r.status_code >= 300 and r.status_code < 400 %}status-redir{% else %}status-error{% endif %}">
-                {{ r.status_code }}
-              </span>
+              <span class="{% if r.is_ok %}status-ok{% elif r.status_code >= 300 and r.status_code < 400 %}status-redir{% else %}status-error{% endif %}">{{ r.status_code }}</span>
             {% else %}
-              <span style="color:#bbb">—</span>
+              <span style="color:var(--text-dim)">—</span>
             {% endif %}
           </td>
-          <td class="td-title">
-            <span title="{{ r.page_title }}">{{ r.page_title|default:"—" }}</span>
-          </td>
-          <td class="td-time">
-            {% if r.response_ms %}{{ r.response_ms }}ms{% else %}—{% endif %}
-          </td>
+          <td class="td-title"><span title="{{ r.page_title }}">{{ r.page_title|default:"—" }}</span></td>
+          <td class="td-time">{% if r.response_ms %}{{ r.response_ms }}ms{% else %}—{% endif %}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
     {% else %}
-      <div class="empty-state">Nenhum resultado ainda.</div>
+      <div class="empty-state">// no results yet</div>
     {% endif %}
   </div>
 </main>
-
 <script>
   function filterRows(type, btn) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-
     document.querySelectorAll('#results-table tbody tr').forEach(row => {
       const isOk = row.dataset.ok === 'true';
       if (type === 'all')   row.style.display = '';
@@ -267,6 +176,5 @@
     });
   }
 </script>
-
 </body>
 </html>

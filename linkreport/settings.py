@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'core',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -69,14 +70,6 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TIMEZONE = 'America/Recife'
 
-
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-    ],
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
-}
 
 # ─── Internacionalização ──────────────────────────────────────────────────────
 
@@ -131,6 +124,7 @@ REST_FRAMEWORK = {
     },
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 # ─── Logging ─────────────────────────────────────────────────────────────────
@@ -161,4 +155,10 @@ LOGGING = {
             'propagate': False,
         },
     },
+}
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'LinkReport API',
+    'DESCRIPTION': 'Bulk URL checker with PDF report generation.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }

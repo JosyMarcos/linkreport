@@ -3,43 +3,84 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register — LinkReport</title>
+  <title>Create account — LinkReport</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .card { background: white; border-radius: 12px; border: 1px solid #e8e8e8; padding: 2rem; width: 100%; max-width: 400px; }
-    h1 { font-size: 1.3rem; font-weight: 600; color: #1a1a2e; margin-bottom: 0.25rem; }
-    p.sub { font-size: 0.85rem; color: #999; margin-bottom: 1.5rem; }
-    label { display: block; font-size: 0.8rem; font-weight: 500; color: #666; margin-bottom: 6px; }
-    input { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px 14px; font-size: 0.9rem; outline: none; margin-bottom: 1rem; transition: border-color .15s; }
-    input:focus { border-color: #1a1a2e; }
-    button { width: 100%; background: #1a1a2e; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 0.9rem; font-weight: 500; cursor: pointer; }
-    button:hover { opacity: 0.85; }
-    .error { background: #fce8e8; color: #c0392b; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1rem; }
-    .footer { text-align: center; margin-top: 1rem; font-size: 0.85rem; color: #999; }
-    .footer a { color: #1a1a2e; text-decoration: none; font-weight: 500; }
+    :root {
+      --bg: #0a0a0f; --surface: #111118; --surface2: #18181f;
+      --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.14);
+      --text: #f0f0f5; --text-muted: #6b6b80; --text-dim: #3a3a4a;
+      --accent: #6c63ff; --accent-glow: rgba(108,99,255,0.15);
+      --red: #ef4444; --red-bg: rgba(239,68,68,0.08);
+      --green: #22c55e; --green-bg: rgba(34,197,94,0.08);
+    }
+    body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image: linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .glow { position: fixed; top: -200px; left: 50%; transform: translateX(-50%); width: 600px; height: 400px; background: radial-gradient(ellipse, rgba(108,99,255,0.12) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+    .wrap { position: relative; z-index: 1; width: 100%; max-width: 400px; padding: 1.5rem; animation: fadeUp .5s ease both; }
+    .logo { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 2rem; justify-content: center; }
+    .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; }
+    .card-header { margin-bottom: 1.75rem; }
+    .card-header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+    .card-header p { font-size: 0.82rem; color: var(--text-muted); }
+    .field { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; }
+    input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-family: 'Syne', sans-serif; font-size: 0.875rem; color: var(--text); outline: none; transition: border-color .2s, box-shadow .2s; }
+    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    input::placeholder { color: var(--text-dim); }
+    .optional { font-size: 0.7rem; color: var(--text-dim); margin-left: 4px; font-family: 'DM Mono', monospace; }
+    .btn-primary { width: 100%; background: var(--accent); color: white; border: none; padding: 11px; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 0.5rem; position: relative; overflow: hidden; }
+    .btn-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(108,99,255,0.4); }
+    .error { background: var(--red-bg); border: 1px solid rgba(239,68,68,0.2); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 0.82rem; margin-bottom: 1rem; font-family: 'DM Mono', monospace; }
+    .perks { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1.5rem; }
+    .perk { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-muted); }
+    .perk-dot { width: 5px; height: 5px; background: var(--green); border-radius: 50%; flex-shrink: 0; }
+    .footer { text-align: center; margin-top: 1.25rem; font-size: 0.8rem; color: var(--text-muted); }
+    .footer a { color: var(--accent); text-decoration: none; font-weight: 500; }
+    .footer a:hover { text-decoration: underline; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
   </style>
 </head>
 <body>
-<div class="card">
-  <h1>Create account</h1>
-  <p class="sub">Start verifying your URLs for free</p>
-
-  {% if error %}
-    <div class="error">{{ error }}</div>
-  {% endif %}
-
-  <form method="POST">
-    {% csrf_token %}
-    <label>Username</label>
-    <input type="text" name="username" required autofocus>
-    <label>Email (optional)</label>
-    <input type="email" name="email">
-    <label>Password</label>
-    <input type="password" name="password" required>
-    <button type="submit">Create account</button>
-  </form>
-
+<div class="glow"></div>
+<div class="wrap">
+  <div class="logo"><span class="logo-dot"></span>LinkReport</div>
+  <div class="card">
+    <div class="card-header">
+      <h1>Create your account</h1>
+      <p>Start verifying URLs for free — no credit card required</p>
+    </div>
+    <div class="perks">
+      <div class="perk"><span class="perk-dot"></span>Up to 50 URLs per report</div>
+      <div class="perk"><span class="perk-dot"></span>PDF export included</div>
+      <div class="perk"><span class="perk-dot"></span>Full report history</div>
+    </div>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="POST">
+      {% csrf_token %}
+      <div class="field">
+        <label>Username</label>
+        <input type="text" name="username" required autofocus placeholder="choose a username">
+      </div>
+      <div class="field">
+        <label>Email <span class="optional">(optional)</span></label>
+        <input type="email" name="email" placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-primary">Create account →</button>
+    </form>
+  </div>
   <p class="footer">Already have an account? <a href="{% url 'login' %}">Sign in</a></p>
 </div>
 </body>
