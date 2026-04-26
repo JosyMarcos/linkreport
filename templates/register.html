@@ -64,7 +64,7 @@
       <div class="perk"><span class="perk-dot"></span>Full report history</div>
     </div>
     {% if error %}<div class="error">{{ error }}</div>{% endif %}
-    <form method="POST">
+    <form method="POST" action="/register/">
       {% csrf_token %}
       <div class="field">
         <label>Username</label>
