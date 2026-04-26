@@ -209,9 +209,10 @@ def register(request):
             return JsonResponse({'error': 'Username already taken.'}, status=400)
 
         user = User.objects.create_user(username=username, password=password, email=email)
+        login(request, user)
         logger.info(f'New user registered: {username}')
-        return JsonResponse({'message': 'User created successfully.'}, status=201)
-
+        return redirect('index')
+    
     return render(request, 'register.html')
 
 
