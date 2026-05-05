@@ -3,186 +3,505 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LinkReport — URL Health Checker</title>
+  <title>Dashboard — LinkReport</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0a0a0f; --surface: #111118; --surface2: #18181f;
-      --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.14);
-      --text: #f0f0f5; --text-muted: #6b6b80; --text-dim: #3a3a4a;
-      --accent: #6c63ff; --accent-glow: rgba(108,99,255,0.15);
-      --green: #22c55e; --green-bg: rgba(34,197,94,0.1);
-      --amber: #f59e0b; --amber-bg: rgba(245,158,11,0.1);
-      --red: #ef4444; --red-bg: rgba(239,68,68,0.1);
-      --blue: #3b82f6; --blue-bg: rgba(59,130,246,0.1);
+      --bg: #0b0c0f;
+      --bg2: #111215;
+      --bg3: #17181c;
+      --gold: #c9a84c;
+      --gold2: #e8c97a;
+      --border: rgba(201,168,76,0.1);
+      --border2: rgba(201,168,76,0.2);
+      --text: #f0efe8;
+      --text2: #7a7870;
+      --text3: #3a3830;
+      --green: #4caf82;
+      --red: #c96060;
+      --amber: #c9964c;
     }
-    body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
     body::before {
-      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
-      background-image: linear-gradient(rgba(108,99,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(108,99,255,0.03) 1px, transparent 1px);
-      background-size: 48px 48px;
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      z-index: 200;
+      pointer-events: none;
     }
-    header {
-      position: sticky; top: 0; z-index: 50; background: rgba(10,10,15,0.85);
-      backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
-      padding: 0 2rem; height: 60px; display: flex; align-items: center; gap: 16px;
+
+    /* NAV */
+    nav {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      padding: 0 2.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(11,12,15,0.95);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      gap: 12px;
     }
-    .logo { font-size: 1rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); display: flex; align-items: center; gap: 8px; }
-    .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent); }
-    .logo-tag { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--text-muted); background: var(--surface2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; letter-spacing: 0.05em; }
-    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    .username { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--text-muted); }
-    .btn-ghost { font-family: 'Syne', sans-serif; font-size: 0.8rem; color: var(--text-muted); background: transparent; border: 1px solid var(--border); padding: 6px 14px; border-radius: 6px; cursor: pointer; text-decoration: none; transition: all .2s; }
-    .btn-ghost:hover { border-color: var(--border-hover); color: var(--text); }
-    .btn-accent { font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 600; color: white; background: var(--accent); border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; text-decoration: none; transition: opacity .2s; }
-    .btn-accent:hover { opacity: 0.85; }
-    main { position: relative; z-index: 1; max-width: 720px; margin: 3rem auto; padding: 0 1.5rem; }
-    .hero { text-align: center; margin-bottom: 2.5rem; animation: fadeUp .5s ease both; }
-    .hero h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.04em; line-height: 1.1; margin-bottom: 0.5rem; }
-    .hero h1 span { background: linear-gradient(135deg, var(--accent), #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .hero p { font-size: 0.9rem; color: var(--text-muted); font-weight: 400; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 1.75rem; margin-bottom: 1.25rem; transition: border-color .2s; }
-    .card:hover { border-color: var(--border-hover); }
-    .card:nth-child(1) { animation: fadeUp .5s .1s ease both; }
-    .card:nth-child(2) { animation: fadeUp .5s .2s ease both; }
-    .card-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin-bottom: 1.25rem; }
-    .field { margin-bottom: 1rem; }
-    label { display: block; font-size: 0.75rem; font-weight: 500; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.02em; }
-    input[type="text"] { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-family: 'Syne', sans-serif; font-size: 0.875rem; color: var(--text); outline: none; transition: border-color .2s, box-shadow .2s; }
-    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-    input[type="text"]::placeholder { color: var(--text-dim); }
-    textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--text); resize: vertical; min-height: 130px; outline: none; transition: border-color .2s, box-shadow .2s; line-height: 1.8; }
-    textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
-    textarea::placeholder { color: var(--text-dim); }
-    .hint { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-dim); margin-top: 6px; }
-    .btn-primary { width: 100%; background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: all .2s; letter-spacing: 0.02em; margin-top: 0.25rem; position: relative; overflow: hidden; }
-    .btn-primary::before { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent); }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(108,99,255,0.4); }
-    .btn-primary:active { transform: translateY(0); }
-    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-    .report-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--border); text-decoration: none; color: inherit; transition: all .15s; gap: 12px; }
-    .report-row:last-child { border-bottom: none; }
-    .report-row:hover { padding-left: 4px; }
-    .report-row:hover .report-title { color: var(--accent); }
-    .report-title { font-size: 0.875rem; font-weight: 500; transition: color .15s; }
-    .report-meta { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-muted); margin-top: 2px; }
-    .badge { font-family: 'DM Mono', monospace; font-size: 0.65rem; font-weight: 500; padding: 3px 10px; border-radius: 20px; white-space: nowrap; letter-spacing: 0.05em; }
-    .badge-done    { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
-    .badge-pending { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
-    .badge-running { background: var(--blue-bg);  color: var(--blue);  border: 1px solid rgba(59,130,246,0.2); }
-    .badge-error   { background: var(--red-bg);   color: var(--red);   border: 1px solid rgba(239,68,68,0.2); }
-    .empty { font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--text-dim); text-align: center; padding: 2rem 0; }
-    .login-prompt { text-align: center; padding: 2rem 0; }
-    .login-prompt p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; }
-    #loading { display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.8); backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center; }
-    #loading.show { display: flex; }
-    .loading-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem 3rem; text-align: center; min-width: 280px; }
-    .spinner-ring { width: 40px; height: 40px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; margin: 0 auto 1.25rem; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-box p { font-size: 0.875rem; color: var(--text); margin-bottom: 4px; }
-    .loading-box small { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-mark {
+      width: 26px; height: 26px;
+      border: 1px solid var(--gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo-mark::before {
+      content: '';
+      width: 9px; height: 9px;
+      background: var(--gold);
+      transform: rotate(45deg);
+      display: block;
+    }
+
+    .nav-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+
+    .nav-user {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      color: var(--text2);
+    }
+
+    .btn-ghost {
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text2);
+      background: transparent;
+      border: 1px solid var(--border2);
+      padding: 6px 16px;
+      text-decoration: none;
+      transition: all .2s;
+      cursor: pointer;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--gold); }
+
+    /* MAIN */
+    main { max-width: 1200px; margin: 0 auto; padding: 3rem 2.5rem; }
+
+    /* PAGE HEADER */
+    .page-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      gap: 2rem;
+      flex-wrap: wrap;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .page-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .page-label::before { content: ''; width: 20px; height: 1px; background: var(--gold); display: block; }
+
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .page-title em { font-style: italic; color: var(--gold2); }
+
+    .btn-new {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--gold);
+      border: none;
+      padding: 12px 24px;
+      text-decoration: none;
+      transition: background .2s;
+      white-space: nowrap;
+      cursor: pointer;
+      display: inline-block;
+    }
+    .btn-new:hover { background: var(--gold2); }
+
+    /* NEW REPORT FORM */
+    .new-report-section {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-top: 2px solid var(--gold);
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .section-label {
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-label::before { content: ''; width: 16px; height: 1px; background: var(--gold); display: block; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+    @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } }
+
+    .field { display: flex; flex-direction: column; gap: 0.4rem; }
+
+    label {
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text2);
+      font-weight: 500;
+    }
+
+    input[type="text"], textarea {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      color: var(--text);
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color .2s;
+      width: 100%;
+    }
+    input[type="text"]::placeholder, textarea::placeholder { color: var(--text3); }
+    input[type="text"]:focus, textarea:focus { border-color: var(--gold); }
+
+    textarea { resize: vertical; min-height: 120px; line-height: 1.7; }
+
+    .field-hint { font-size: 0.68rem; color: var(--text3); line-height: 1.5; }
+
+    .form-actions { display: flex; gap: 10px; align-items: center; margin-top: 1.25rem; flex-wrap: wrap; }
+
+    .btn-submit {
+      font-family: 'Inter', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--gold);
+      border: none;
+      padding: 11px 24px;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .btn-submit:hover { background: var(--gold2); }
+
+    .form-note { font-size: 0.72rem; color: var(--text2); }
+
+    /* MESSAGES */
+    .messages { margin-bottom: 1.5rem; }
+    .msg {
+      font-size: 0.78rem;
+      padding: 10px 14px;
+      border-left: 2px solid;
+      margin-bottom: 8px;
+    }
+    .msg-error { border-color: var(--red); background: rgba(201,96,96,0.06); color: #e88; }
+    .msg-success { border-color: var(--green); background: rgba(76,175,130,0.06); color: #6da; }
+
+    /* REPORTS TABLE */
+    .reports-section { }
+
+    .reports-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .reports-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+    }
+    .reports-title em { font-style: italic; color: var(--gold2); }
+
+    .reports-count {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+
+    .reports-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid var(--border);
+    }
+
+    .reports-table th {
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text2);
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 500;
+      background: var(--bg2);
+    }
+
+    .reports-table td {
+      padding: 14px 16px;
+      font-size: 0.82rem;
+      border-bottom: 1px solid rgba(201,168,76,0.04);
+      vertical-align: middle;
+    }
+
+    .reports-table tr:last-child td { border-bottom: none; }
+    .reports-table tbody tr:hover td { background: var(--bg2); }
+
+    .report-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--text);
+    }
+    .report-name a { color: inherit; text-decoration: none; }
+    .report-name a:hover { color: var(--gold2); }
+
+    .report-date { font-size: 0.72rem; color: var(--text2); }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border: 1px solid;
+      font-weight: 500;
+    }
+    .badge-done { color: var(--green); border-color: rgba(76,175,130,0.3); background: rgba(76,175,130,0.06); }
+    .badge-pending { color: var(--amber); border-color: rgba(201,150,76,0.3); background: rgba(201,150,76,0.06); }
+    .badge-error { color: var(--red); border-color: rgba(201,96,96,0.3); background: rgba(201,96,96,0.06); }
+
+    .stat-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 500;
+    }
+    .chip-total { color: var(--text2); }
+    .chip-ok { color: var(--green); }
+    .chip-err { color: var(--red); }
+
+    .action-links { display: flex; gap: 10px; align-items: center; }
+    .action-link {
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text2);
+      text-decoration: none;
+      transition: color .2s;
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+    }
+    .action-link:hover { color: var(--gold); border-color: var(--border2); }
+    .action-link-pdf { color: var(--gold); border-color: var(--border2); }
+    .action-link-pdf:hover { color: var(--gold2); }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 5rem 2rem;
+      border: 1px solid var(--border);
+    }
+
+    .empty-mark {
+      width: 48px; height: 48px;
+      border: 1px solid var(--border2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+    .empty-mark::before {
+      content: '';
+      width: 18px; height: 18px;
+      background: var(--gold-dim, rgba(201,168,76,0.12));
+      border: 1px solid var(--border2);
+      transform: rotate(45deg);
+      display: block;
+    }
+
+    .empty-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+    .empty-title em { font-style: italic; color: var(--gold2); }
+    .empty-sub { font-size: 0.8rem; color: var(--text2); line-height: 1.7; }
   </style>
 </head>
 <body>
-<form id="csrf-form" style="display:none">{% csrf_token %}</form>
-<header>
-  <div class="logo"><span class="logo-dot"></span>LinkReport</div>
-  <span class="logo-tag">URL CHECKER</span>
-  {% if request.user.is_authenticated %}
-    <div class="header-right">
-      <span class="username">{{ request.user.username }}</span>
-      <a class="btn-ghost" href="{% url 'logout' %}">Sign out</a>
-    </div>
-  {% else %}
-    <div class="header-right">
-      <a class="btn-ghost" href="{% url 'login' %}">Sign in</a>
-      <a class="btn-accent" href="{% url 'register' %}">Get started</a>
-    </div>
-  {% endif %}
-</header>
+
+<nav>
+  <a class="logo" href="/app/"><div class="logo-mark"></div>LinkReport</a>
+  <div class="nav-right">
+    {% if user.is_authenticated %}
+    <span class="nav-user">{{ user.username }}</span>
+    <form method="post" action="/logout/" style="display:inline">
+      {% csrf_token %}
+      <button type="submit" class="btn-ghost">Sign out</button>
+    </form>
+    {% endif %}
+  </div>
+</nav>
+
 <main>
-  <div class="hero">
-    <h1>Check your links.<br><span>Get instant reports.</span></h1>
-    <p>Verify up to 50 URLs at once — status codes, titles, response times, PDF export.</p>
-  </div>
-  <div class="card">
-    <p class="card-title">New report</p>
-    <div class="field">
-      <label>Report name <span style="color:var(--text-dim)">(optional)</span></label>
-      <input type="text" id="title" placeholder="Ex: Client X landing pages">
+  <div class="page-header">
+    <div>
+      <div class="page-label">Dashboard</div>
+      <h1 class="page-title">Your <em>reports</em></h1>
     </div>
-    <div class="field">
-      <label>URLs — one per line</label>
-      <textarea id="urls" placeholder="https://example.com&#10;https://google.com&#10;https://github.com"></textarea>
-      <p class="hint">↳ max 50 URLs per report</p>
-    </div>
-    <button class="btn-primary" id="btn-submit" onclick="submitReport()">Generate report →</button>
+    <a class="btn-new" href="#new-report">+ New report</a>
   </div>
-  <div class="card">
-    <p class="card-title">Recent reports</p>
-    {% if request.user.is_authenticated %}
-      {% if reports %}
-        {% for r in reports %}
-          <a class="report-row" href="{% url 'report_detail' r.id %}">
-            <div>
-              <div class="report-title">{{ r.title }}</div>
-              <div class="report-meta">{{ r.total_links }} links · {{ r.created_at|date:"m/d/Y H:i" }}</div>
-            </div>
-            <span class="badge badge-{{ r.status }}">{{ r.get_status_display }}</span>
-          </a>
-        {% endfor %}
-      {% else %}
-        <p class="empty">// no reports yet</p>
-      {% endif %}
-    {% else %}
-      <div class="login-prompt">
-        <p>Sign in to save and track your reports.</p>
-        <a class="btn-ghost" href="{% url 'login' %}">Sign in to continue</a>
+
+  {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+    <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- New report form -->
+  <div class="new-report-section" id="new-report">
+    <div class="section-label">New report</div>
+    <form method="post" action="/app/create/">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="field">
+          <label for="name">Report name <span style="color:var(--text3)">(optional)</span></label>
+          <input type="text" id="name" name="name" placeholder="e.g. Client website audit">
+        </div>
       </div>
+      <div class="field">
+        <label for="urls">URLs <span style="color:var(--text3)">— one per line</span></label>
+        <textarea id="urls" name="urls" placeholder="https://example.com&#10;https://example.com/about&#10;https://example.com/contact"></textarea>
+        <span class="field-hint">Up to 50 URLs per report. Include the full URL with https://</span>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-submit">Check URLs →</button>
+        <span class="form-note">Results ready in under 30 seconds.</span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Reports list -->
+  <div class="reports-section">
+    <div class="reports-header">
+      <h2 class="reports-title">Recent <em>reports</em></h2>
+      {% if reports %}<span class="reports-count">{{ reports|length }} report{{ reports|length|pluralize }}</span>{% endif %}
+    </div>
+
+    {% if reports %}
+    <table class="reports-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Created</th>
+          <th>Status</th>
+          <th>Results</th>
+          <th style="text-align:right">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for report in reports %}
+        <tr>
+          <td>
+            <div class="report-name">
+              <a href="/app/report/{{ report.id }}/">{{ report.name|default:"Untitled report" }}</a>
+            </div>
+          </td>
+          <td><span class="report-date">{{ report.created_at|date:"M d, Y · H:i" }}</span></td>
+          <td>
+            {% if report.status == 'done' %}
+              <span class="badge badge-done">Done</span>
+            {% elif report.status == 'pending' or report.status == 'processing' %}
+              <span class="badge badge-pending">Processing</span>
+            {% else %}
+              <span class="badge badge-error">Error</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if report.status == 'done' %}
+            <span class="stat-chip chip-total">{{ report.total_urls }} total</span>
+            &nbsp;
+            <span class="stat-chip chip-ok">{{ report.ok_count }} ok</span>
+            &nbsp;
+            <span class="stat-chip chip-err">{{ report.error_count }} err</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <div class="action-links" style="justify-content:flex-end">
+              <a class="action-link" href="/app/report/{{ report.id }}/">View</a>
+              {% if report.status == 'done' %}
+              <a class="action-link action-link-pdf" href="/app/report/{{ report.id }}/pdf/">PDF</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-mark"></div>
+      <h3 class="empty-title">No reports <em>yet</em></h3>
+      <p class="empty-sub">Paste your first batch of URLs above to get started.<br>Results are ready in under 30 seconds.</p>
+    </div>
     {% endif %}
   </div>
 </main>
-<div id="loading">
-  <div class="loading-box">
-    <div class="spinner-ring"></div>
-    <p>Checking links...</p>
-    <small id="loading-progress">initializing</small>
-  </div>
-</div>
-<script>
-  function getCsrfToken() { return document.querySelector('[name=csrfmiddlewaretoken]').value; }
-  async function submitReport() {
-    const urls = document.getElementById('urls').value.trim();
-    const title = document.getElementById('title').value.trim();
-    if (!urls) { alert('Please enter at least one URL.'); return; }
-    const btn = document.getElementById('btn-submit');
-    btn.disabled = true;
-    document.getElementById('loading').classList.add('show');
-    try {
-      const form = new FormData();
-      form.append('urls', urls);
-      form.append('title', title);
-      const res = await fetch('/reports/', { method: 'POST', headers: { 'X-CSRFToken': getCsrfToken() }, body: form });
-      const data = await res.json();
-      if (!res.ok) { alert(data.error || 'Error creating report.'); return; }
-      await pollStatus(data.report_id);
-      window.location.href = `/reports/${data.report_id}/`;
-    } catch (e) { alert('Connection error.'); }
-    finally { btn.disabled = false; document.getElementById('loading').classList.remove('show'); }
-  }
-  async function pollStatus(id) {
-    const prog = document.getElementById('loading-progress');
-    while (true) {
-      const r = await fetch(`/reports/${id}/status/`);
-      const data = await r.json();
-      prog.textContent = `${data.done} / ${data.total} links checked (${data.percent}%)`;
-      if (data.status === 'done' || data.status === 'error') break;
-      await new Promise(res => setTimeout(res, 1500));
-    }
-  }
-</script>
+
 </body>
 </html>
