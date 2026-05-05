@@ -265,7 +265,10 @@
       <p class="form-sub">Don't have an account? <a href="/register/">Create one free →</a></p>
     </div>
 
-    {% if messages %}
+    {% if error %}
+<div class="messages"><div class="msg msg-error">{{ error }}</div></div>
+{% endif %}
+{% if messages %}
     <div class="messages">
       {% for message in messages %}
       <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
