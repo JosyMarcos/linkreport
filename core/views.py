@@ -199,20 +199,20 @@ logger = logging.getLogger('core')
 def register(request):
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
-        password = request.POST.get('password', '').strip()
+        password = request.POST.get('password1', '').strip()
         email    = request.POST.get('email', '').strip()
 
         if not username or not password:
-            return JsonResponse({'error': 'Username and password are required.'}, status=400)
+            return render(request, 'register.html', {'error': 'Username and password are required.'})
 
         if User.objects.filter(username=username).exists():
-            return JsonResponse({'error': 'Username already taken.'}, status=400)
+            return render(request, 'register.html', {'error': 'Username already taken.'})
 
         user = User.objects.create_user(username=username, password=password, email=email)
         login(request, user)
         logger.info(f'New user registered: {username}')
         return redirect('index')
-    
+
     return render(request, 'register.html')
 
 

@@ -260,7 +260,19 @@
       <h1 class="form-title">Create account <em>free</em></h1>
       <p class="form-sub">Already have one? <a href="/login/">Sign in →</a></p>
     </div>
+    {% if error %}
+<div class="messages">
+  <div class="msg msg-error">{{ error }}</div>
+</div>
+{% endif %}
 
+{% if messages %}
+<div class="messages">
+  {% for message in messages %}
+  <div class="msg {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %}">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
     {% if messages %}
     <div class="messages">
       {% for message in messages %}
