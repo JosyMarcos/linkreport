@@ -61,7 +61,7 @@ def create_report(request):
     from .tasks import scrape_report
     scrape_report.delay(str(report.id))
 
-    return JsonResponse({'report_id': str(report.id)}, status=201)
+    return redirect('report_detail', pk=report.id)
     
 
 
