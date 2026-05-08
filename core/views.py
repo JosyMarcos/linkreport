@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
+from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -192,7 +193,6 @@ def _scrape_report(report: Report, link_results: list[LinkResult]) -> None:
 import logging
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 
 logger = logging.getLogger('core')
