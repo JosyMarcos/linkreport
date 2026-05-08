@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — LinkReport</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --bg: #0b0c0f; --gold: #c9a84c; --gold2: #e8c97a; --text: #f0efe8; --text2: #7a7870; --border: rgba(201,168,76,0.1); }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
+    body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+    .mark { width: 64px; height: 64px; border: 1px solid rgba(201,168,76,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 2rem; }
+    .mark::before { content: ''; width: 24px; height: 24px; background: var(--gold); transform: rotate(45deg); display: block; }
+    .num { font-family: 'Playfair Display', serif; font-size: 6rem; font-weight: 700; color: var(--gold2); line-height: 1; letter-spacing: -0.04em; margin-bottom: 1rem; }
+    h1 { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700; margin-bottom: 0.75rem; }
+    h1 em { font-style: italic; color: var(--gold2); }
+    p { font-size: 0.88rem; color: var(--text2); line-height: 1.75; margin-bottom: 2.5rem; }
+    .btn { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bg); background: var(--gold); padding: 12px 28px; text-decoration: none; transition: background .2s; display: inline-block; }
+    .btn:hover { background: var(--gold2); }
+    .btn-ghost { font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text2); background: transparent; border: 1px solid rgba(201,168,76,0.2); padding: 12px 28px; text-decoration: none; transition: all .2s; display: inline-block; margin-left: 10px; }
+    .btn-ghost:hover { color: var(--text); border-color: var(--gold); }
+  </style>
+</head>
+<body>
+  <div class="mark"></div>
+  <div class="num">404</div>
+  <h1>Page <em>not found</em></h1>
+  <p>The page you're looking for doesn't exist or has been moved.</p>
+  <div>
+    <a class="btn" href="/">Go home →</a>
+    <a class="btn-ghost" href="/app/">Dashboard</a>
+  </div>
+</body>
+</html>

@@ -22,6 +22,7 @@ from .models import Report, LinkResult
 
 # ─── Páginas HTML ─────────────────────────────────────────────────────────────
 
+@login_required(login_url="/login/")
 def index(request):
     reports = Report.objects.filter(owner=request.user).order_by('-created_at')[:10] if request.user.is_authenticated else []
     return render(request, 'index.html', {'reports': reports})
@@ -191,6 +192,7 @@ def _scrape_report(report: Report, link_results: list[LinkResult]) -> None:
 import logging
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 
 logger = logging.getLogger('core')
@@ -260,3 +262,5 @@ def download_csv(request, pk):
         ])
 
     return response
+def custom_404(request, exception):
+    return render(request, '404.html', status=404)
